@@ -7,6 +7,7 @@ import Header from './components/Header';
 import Auth from './pages/Auth';
 import Dashboard from './pages/Dashboard';
 import AlertModal from './components/AlertModal';
+import { requestNotificationPermission } from './push'; // 1. IMPORT THE NOTIFICATION FUNCTION
 
 function App() {
     const [user, setUser] = useState(null);
@@ -45,6 +46,19 @@ function App() {
         
         checkUserSession();
     }, []);
+
+    // 2. ADD THE USEEFFECT HOOK FOR NOTIFICATIONS
+    // When a user logs in, ask for permission to send notifications.
+    useEffect(() => {
+        if (user) {
+            // Check if permission is 'default' (meaning user hasn't chosen yet)
+            // to avoid asking repeatedly if they've already said yes or no.
+            if (Notification.permission === 'default') {
+                requestNotificationPermission();
+            }
+        }
+    }, [user]);
+
 
     const handleLogin = (token) => {
         localStorage.setItem('token', token);

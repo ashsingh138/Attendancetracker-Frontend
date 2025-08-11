@@ -7,8 +7,7 @@ ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, PointE
 
 const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
-// --- Inner Components for SubjectManager ---
-
+// --- Inner Component: SubjectTrendGraph ---
 const SubjectTrendGraph = ({ subject, schedule }) => {
     const subjectClasses = schedule
         .filter(item => item.subject_id === subject._id && item.status !== 'no_class' && new Date(item.date) <= new Date())
@@ -43,24 +42,17 @@ const SubjectTrendGraph = ({ subject, schedule }) => {
     return <Line data={data} options={options} />;
 };
 
-
+// --- Inner Component: SubjectStats ---
 const SubjectStats = ({ subject, schedule }) => {
-    // This logic correctly calculates all the values as you described.
     const totalSemesterClasses = schedule.filter(s => s.subject_id === subject._id);
     const validPastClasses = totalSemesterClasses.filter(item => item.status !== 'no_class' && new Date(item.date) <= new Date());
-    
-    // Overall / Personal Calculations
     const overallTotalHours = validPastClasses.reduce((acc, item) => acc + (item.duration || 0), 0);
     const overallAttendedHours = validPastClasses.filter(item => item.personal_status === 'present').reduce((acc, item) => acc + (item.duration || 0), 0);
     const currentPercentage = overallTotalHours > 0 ? (overallAttendedHours / overallTotalHours) * 100 : 100;
-
-    // Official Calculations
     const officialClasses = validPastClasses.filter(item => item.status === 'present' || item.status === 'absent');
     const officialTotalHours = officialClasses.reduce((acc, item) => acc + (item.duration || 0), 0);
     const officialAttendedHours = officialClasses.filter(item => item.status === 'present').reduce((acc, item) => acc + (item.duration || 0), 0);
     const officialPercentage = officialTotalHours > 0 ? ((officialAttendedHours / officialTotalHours) * 100).toFixed(1) : 'N/A';
-
-    // Predictor logic remains the same
     const goal = subject.attendance_goal || 75;
     const totalSemesterHours = totalSemesterClasses.reduce((acc, item) => acc + (item.duration || 0), 0);
     const futureHours = totalSemesterHours - overallTotalHours;
@@ -69,32 +61,26 @@ const SubjectStats = ({ subject, schedule }) => {
 
     return (
         <div className="subject-stats-container">
-            {/* The progress bar will still show your personal percentage */}
             <div className="goal-progress"><div className="progress-bar-labels"><span>Your %: {currentPercentage.toFixed(1)}%</span><span>Goal: {goal}%</span></div><div className="progress-bar-container"><div className="progress-bar-fill" style={{ width: `${currentPercentage}%` }}></div><div className="progress-bar-goal" style={{ left: `${goal}%` }}></div></div></div>
-            
-            {/* --- THIS IS THE CORRECTED DISPLAY GRID --- */}
             <div className="subject-stats-grid">
-                {/* Personal Tracking Stats */}
                 <div className="subject-stat"><h5>Personal Attended</h5><p>{overallAttendedHours} hrs</p></div>
                 <div className="subject-stat"><h5>Personal Total</h5><p>{overallTotalHours} hrs</p></div>
                 <div className="subject-stat"><h5>Personal %</h5><p>{currentPercentage.toFixed(1)}%</p></div>
-                {/* Official Tracking Stats */}
                 <div className="subject-stat"><h5>Official Attended</h5><p>{officialAttendedHours} hrs</p></div>
                 <div className="subject-stat"><h5>Official Total</h5><p>{officialTotalHours} hrs</p></div>
                 <div className="subject-stat"><h5>Official %</h5><p>{officialPercentage}%</p></div>
             </div>
-
-            <div className="predictors-grid">{currentPercentage >= goal ? (<div className="predictor-panel success"><h5>Bunk Meter</h5><p>You can miss up to <strong>{bunkableHours < 0 ? 0 : bunkableHours} more hours</strong> of this class and still meet your goal.</p></div>) : (<div className="predictor-panel warning"><h5>Catch-Up Calculator</h5>{catchUpHours > 0 && catchUpHours <= futureHours ? (<p>You must attend the next <strong>{catchUpHours} consecutive hours</strong> to reach your goal.</p>) : (<p>Your {goal}% attendance goal is no longer reachable this semester.</p>)}</div>)}</div>
+            <div className="predictors-grid">{currentPercentage >= goal ? (<div className="predictor-panel success"><h5>Bunk Meter</h5><p>You can miss up to <strong>{bunkableHours < 0 ? 0 : bunkableHours} more hours</strong> and still meet your goal.</p></div>) : (<div className="predictor-panel warning"><h5>Catch-Up Calculator</h5>{catchUpHours > 0 && catchUpHours <= futureHours ? (<p>You must attend the next <strong>{catchUpHours} consecutive hours</strong> to reach your goal.</p>) : (<p>Your {goal}% attendance goal is no longer reachable this semester.</p>)}</div>)}</div>
         </div>
     );
 };
 
-
+// --- Inner Component: SubjectForm ---
 function SubjectForm({ subject, onSave, onCancel, semesterId }) {
     const [subjectCode, setSubjectCode] = useState('');
     const [subjectName, setSubjectName] = useState('');
     const [professorName, setProfessorName] = useState('');
-    const [scheduleSlots, setScheduleSlots] = useState([{ day: 'Monday', duration: 1 }]);
+    const [scheduleSlots, setScheduleSlots] = useState([{ day: 'Monday', start_time: '09:00', duration: 1 }]);
     const [attendanceGoal, setAttendanceGoal] = useState(75);
     const [loading, setLoading] = useState(false);
 
@@ -103,11 +89,11 @@ function SubjectForm({ subject, onSave, onCancel, semesterId }) {
             setSubjectCode(subject.subject_code);
             setSubjectName(subject.subject_name);
             setProfessorName(subject.professor_name || '');
-            setScheduleSlots(subject.schedule?.length > 0 ? subject.schedule : [{ day: 'Monday', duration: 1 }]);
+            setScheduleSlots(subject.schedule?.length > 0 ? subject.schedule.map(s => ({...s, start_time: s.start_time || '09:00'})) : [{ day: 'Monday', start_time: '09:00', duration: 1 }]);
             setAttendanceGoal(subject.attendance_goal || 75);
         } else {
             setSubjectCode(''); setSubjectName(''); setProfessorName('');
-            setScheduleSlots([{ day: 'Monday', duration: 1 }]);
+            setScheduleSlots([{ day: 'Monday', start_time: '09:00', duration: 1 }]);
             setAttendanceGoal(75);
         }
     }, [subject]);
@@ -118,30 +104,22 @@ function SubjectForm({ subject, onSave, onCancel, semesterId }) {
         setScheduleSlots(newSlots);
     };
 
-    const addSlot = () => setScheduleSlots([...scheduleSlots, { day: 'Monday', duration: 1 }]);
+    const addSlot = () => setScheduleSlots([...scheduleSlots, { day: 'Monday', start_time: '09:00', duration: 1 }]);
     const removeSlot = (index) => setScheduleSlots(scheduleSlots.filter((_, i) => i !== index));
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
         if (!semesterId) {
-            alert("Please set an active semester before adding subjects.");
-            setLoading(false);
-            return;
+            alert("Please set an active semester before adding subjects."); setLoading(false); return;
         }
         const payload = { semester_id: semesterId, subject_code: subjectCode, subject_name: subjectName, professor_name: professorName, schedule: scheduleSlots, attendance_goal: attendanceGoal };
         try {
-            if (subject) {
-                await apiClient.put(`/subjects/${subject._id}`, payload);
-            } else {
-                await apiClient.post('/subjects', payload);
-            }
+            if (subject) { await apiClient.put(`/subjects/${subject._id}`, payload); } else { await apiClient.post('/subjects', payload); }
             onSave();
         } catch (error) {
             alert(error.response?.data?.message || 'Failed to save subject');
-        } finally {
-            setLoading(false);
-        }
+        } finally { setLoading(false); }
     };
 
     return (
@@ -155,7 +133,14 @@ function SubjectForm({ subject, onSave, onCancel, semesterId }) {
             </div>
             <h4 style={{ marginTop: '1rem', marginBottom: '0.5rem', color: '#9ca3af' }}>Class Schedule</h4>
             {scheduleSlots.map((slot, index) => (
-                <div key={index} className="form-grid" style={{ alignItems: 'center', marginBottom: '0.5rem' }}><select value={slot.day} onChange={e => handleSlotChange(index, 'day', e.target.value)} className="form-select">{days.map(d => <option key={d} value={d}>{d}</option>)}</select><div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><input type="number" placeholder="Hours" value={slot.duration} min="1" onChange={e => handleSlotChange(index, 'duration', e.target.value)} className="form-input" required />{scheduleSlots.length > 1 && <button type="button" onClick={() => removeSlot(index)} className="btn-danger-small">X</button>}</div></div>
+                <div key={index} className="form-grid" style={{ gridTemplateColumns: '2fr 1fr 1fr', alignItems: 'center', marginBottom: '0.5rem' }}>
+                    <select value={slot.day} onChange={e => handleSlotChange(index, 'day', e.target.value)} className="form-select">{days.map(d => <option key={d} value={d}>{d}</option>)}</select>
+                    <input type="time" value={slot.start_time} onChange={e => handleSlotChange(index, 'start_time', e.target.value)} className="form-input" required />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <input type="number" placeholder="Hours" value={slot.duration} min="1" onChange={e => handleSlotChange(index, 'duration', e.target.value)} className="form-input" required />
+                        {scheduleSlots.length > 1 && <button type="button" onClick={() => removeSlot(index)} className="btn-danger-small">X</button>}
+                    </div>
+                </div>
             ))}
             <button type="button" onClick={addSlot} className="action-btn" style={{ marginRight: '1rem' }}>+ Add Day</button>
             <button type="submit" className="btn btn-primary" disabled={loading}>{loading ? 'Saving...' : (subject ? 'Update Subject' : 'Add Subject')}</button>
@@ -165,23 +150,22 @@ function SubjectForm({ subject, onSave, onCancel, semesterId }) {
 }
 
 // --- Main SubjectManager Component ---
-
 function SubjectManager({ subjects, schedule, onUpdate, semesterId }) {
     const [isEditing, setIsEditing] = useState(null);
     const [expandedGraph, setExpandedGraph] = useState(null);
 
-    const handleSaveSuccess = () => {
-        onUpdate();
-        setIsEditing(null);
+    const handleSaveSuccess = () => { 
+        onUpdate(); 
+        setIsEditing(null); 
     };
 
     const deleteSubject = async (id) => {
         if (window.confirm("Are you sure? This will delete the subject and ALL its related attendance, test, and assignment records permanently.")) {
-            try {
-                await apiClient.delete(`/subjects/${id}`);
-                onUpdate();
-            } catch (error) {
-                alert(error.response?.data?.message || 'Failed to delete subject');
+            try { 
+                await apiClient.delete(`/subjects/${id}`); 
+                onUpdate(); 
+            } catch (error) { 
+                alert(error.response?.data?.message || 'Failed to delete subject'); 
             }
         }
     };
@@ -200,7 +184,13 @@ function SubjectManager({ subjects, schedule, onUpdate, semesterId }) {
         const csvRows = [headers.join(',')]; 
 
         subjectRecords.forEach(record => {
-            const row = [ new Date(record.date + 'T00:00:00').toLocaleDateString(), days[new Date(record.date + 'T00:00:00').getDay()], record.status, record.personal_status || 'not_marked', record.duration];
+            const row = [ 
+                new Date(record.date + 'T00:00:00').toLocaleDateString(), 
+                days[new Date(record.date + 'T00:00:00').getDay()], 
+                record.status, 
+                record.personal_status || 'not_marked', 
+                record.duration
+            ];
             csvRows.push(row.map(val => `"${val}"`).join(','));
         });
 
@@ -216,31 +206,44 @@ function SubjectManager({ subjects, schedule, onUpdate, semesterId }) {
 
     return (
         <div className="panel">
-            {isEditing ? (<SubjectForm subject={isEditing} onSave={handleSaveSuccess} onCancel={() => setIsEditing(null)} semesterId={semesterId}/>) : (
+            {isEditing ? (
+                <SubjectForm 
+                    subject={isEditing} 
+                    onSave={handleSaveSuccess} 
+                    onCancel={() => setIsEditing(null)} 
+                    semesterId={semesterId}
+                />
+            ) : (
             <>
                 <SubjectForm onSave={handleSaveSuccess} semesterId={semesterId}/>
-                <h3 style={{ fontSize: '1.5rem', marginTop: '2rem', marginBottom: '1rem', borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>Your Subjects & Stats</h3>
-                {!semesterId && <p>Please set an active semester in Settings to manage subjects.</p>}
-                {subjects.length === 0 && semesterId && <p>No subjects added for this semester yet.</p>}
+                <h3 style={{ fontSize: '1.5rem', marginTop: '2rem', marginBottom: '1rem', borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
+                    Your Subjects & Stats
+                </h3>
                 <div className="subject-list-container">
-                    {subjects.map(s => (<div key={s._id} className="subject-card">
-                        <div className="subject-card-header">
-                            <div>
-                                <h4>{s.subject_code}: {s.subject_name}</h4>
-                                {s.professor_name && <p className="professor-name">{s.professor_name}</p>}
+                    {subjects.length === 0 && semesterId && (
+                        <p>No subjects added for this semester yet. Add one above to get started.</p>
+                    )}
+                    {subjects.map(s => (
+                        <div key={s._id} className="subject-card">
+                            <div className="subject-card-header">
+                                <div>
+                                    <h4>{s.subject_code}: {s.subject_name}</h4>
+                                    {s.professor_name && <p className="professor-name">{s.professor_name}</p>}
+                                </div>
+                                <div className="subject-card-actions">
+                                    <button onClick={() => handleExportCsv(s)} className="btn-edit">Export CSV</button>
+                                    <button onClick={() => setExpandedGraph(expandedGraph === s._id ? null : s._id)} className="btn-edit">{expandedGraph === s._id ? 'Hide' : 'Trend'}</button>
+                                    <button onClick={() => setIsEditing(s)} className="btn-edit">Edit</button>
+                                    <button onClick={() => deleteSubject(s._id)} className="btn-danger-small">Delete</button>
+                                </div>
                             </div>
-                            <div className="subject-card-actions">
-                                <button onClick={() => handleExportCsv(s)} className="btn-edit">Export CSV</button>
-                                <button onClick={() => setExpandedGraph(expandedGraph === s._id ? null : s._id)} className="btn-edit">{expandedGraph === s._id ? 'Hide' : 'Trend'}</button>
-                                <button onClick={() => setIsEditing(s)} className="btn-edit">Edit</button>
-                                <button onClick={() => deleteSubject(s._id)} className="btn-danger-small">Delete</button>
-                            </div>
+                            {expandedGraph === s._id && <div className="trend-graph-container"><SubjectTrendGraph subject={s} schedule={schedule} /></div>}
+                            <SubjectStats subject={s} schedule={schedule} />
                         </div>
-                        {expandedGraph === s._id && <div className="trend-graph-container"><SubjectTrendGraph subject={s} schedule={schedule} /></div>}
-                        <SubjectStats subject={s} schedule={schedule} />
-                    </div>))}
+                    ))}
                 </div>
-            </>)}
+            </>
+            )}
         </div>
     );
 }
