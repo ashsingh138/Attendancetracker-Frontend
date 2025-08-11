@@ -12,6 +12,7 @@ function AssignmentForm({ subjects, assignment, onAssignmentModified, onCancel }
         if (isEditMode) {
             setSubjectId(assignment.subject_id);
             setAssignmentName(assignment.assignment_name);
+            // When editing, convert the UTC date from the DB back to local for display
             const localDate = new Date(assignment.deadline);
             setDate(localDate.toISOString().split('T')[0]);
             setTime(localDate.toTimeString().slice(0,5));
@@ -22,7 +23,13 @@ function AssignmentForm({ subjects, assignment, onAssignmentModified, onCancel }
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        const deadline = new Date(`${date}T${time}`).toISOString();
+        
+        // Create a date object from the local date and time inputs from the form
+        const localDateTime = new Date(`${date}T${time}`);
+        
+        // Convert the local date to a UTC ISO string before sending to the backend
+        const deadline = localDateTime.toISOString();
+
         const payload = { subject_id: subjectId, assignment_name: assignmentName, deadline };
         try {
             if (isEditMode) {

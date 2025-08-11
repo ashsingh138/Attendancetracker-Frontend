@@ -12,6 +12,7 @@ function TestForm({ subjects, test, onTestModified, onCancel }) {
         if (isEditMode) {
             setSubjectId(test.subject_id);
             setTestName(test.test_name);
+            // When editing, convert the UTC date from the DB back to local for display
             const localDate = new Date(test.test_datetime);
             setDate(localDate.toISOString().split('T')[0]);
             setTime(localDate.toTimeString().slice(0,5));
@@ -22,7 +23,13 @@ function TestForm({ subjects, test, onTestModified, onCancel }) {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        const test_datetime = new Date(`${date}T${time}`).toISOString();
+        
+        // Create a date object from the local date and time inputs from the form
+        const localDateTime = new Date(`${date}T${time}`);
+        
+        // Convert the local date to a UTC ISO string before sending to the backend
+        const test_datetime = localDateTime.toISOString(); 
+
         const payload = { subject_id: subjectId, test_name: testName, test_datetime };
         try {
             if (isEditMode) {
