@@ -34,31 +34,41 @@ function NotificationSettings({ user }) {
     return (
         <div className="panel" style={{ marginTop: '2rem' }}>
             <h3 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>Notification Settings</h3>
-            <div className="form-group">
+            
+            <div className="notification-settings-item">
+                <div className="notification-text">
+                    <h5>Classes</h5>
+                    <p>Notify 10 minutes before each class.</p>
+                </div>
                 <label className="toggle-switch">
-                    Classes
                     <input type="checkbox" checked={prefs.classes} onChange={() => handleToggle('classes')} />
                     <span className="slider"></span>
                 </label>
-                <p style={{color: 'var(--text-secondary)', fontSize: '0.9rem'}}>Notify 10 minutes before each class.</p>
             </div>
-            <div className="form-group">
+
+            <div className="notification-settings-item">
+                <div className="notification-text">
+                    <h5>Tests</h5>
+                    <p>Notify 1 day, 6 hours, 1 hour, and 30 minutes before tests.</p>
+                </div>
                 <label className="toggle-switch">
-                    Tests
                     <input type="checkbox" checked={prefs.tests} onChange={() => handleToggle('tests')} />
                     <span className="slider"></span>
                 </label>
-                <p style={{color: 'var(--text-secondary)', fontSize: '0.9rem'}}>Notify 1 day, 6 hours, 1 hour, and 30 minutes before tests.</p>
             </div>
-             <div className="form-group">
+
+            <div className="notification-settings-item">
+                <div className="notification-text">
+                    <h5>Assignments</h5>
+                    <p>Notify 1 day, 3 hours, and 1 hour before deadlines.</p>
+                </div>
                 <label className="toggle-switch">
-                    Assignments
                     <input type="checkbox" checked={prefs.assignments} onChange={() => handleToggle('assignments')} />
                     <span className="slider"></span>
                 </label>
-                <p style={{color: 'var(--text-secondary)', fontSize: '0.9rem'}}>Notify 1 day, 3 hours, and 1 hour before deadlines.</p>
             </div>
-            <button className="btn btn-primary" onClick={handleSave} disabled={loading}>
+
+            <button className="btn btn-primary" onClick={handleSave} disabled={loading} style={{marginTop: '1.5rem'}}>
                 {loading ? 'Saving...' : 'Save Preferences'}
             </button>
         </div>
