@@ -1,0 +1,240 @@
+/* ==========================================================================
+   1. CSS Variables & Theming (Enhanced Palette)
+   ========================================================================== */
+:root {
+    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+    --transition-fast: all 0.2s ease-in-out;
+    --transition-medium: all 0.3s ease-in-out;
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+
+/* Light Theme */
+:root {
+    --bg-primary: #f4f7f9;
+    --bg-secondary: #ffffff;
+    --bg-tertiary: #f1f5f9;
+    --text-primary: #1e293b;
+    --text-secondary: #64748b;
+    --border-color: #e2e8f0;
+    --accent-primary: #4f46e5;
+    --accent-primary-hover: #4338ca;
+    --accent-secondary: #059669;
+    --accent-danger: #e11d48;
+    --accent-warning: #f59e0b;
+    --success-bg: #ecfdf5;
+    --success-text: #047857;
+    --warning-bg: #fffbeb;
+    --warning-text: #b45309;
+}
+
+/* Dark Theme */
+:root.dark {
+    --bg-primary: #0f172a;
+    --bg-secondary: #1e293b;
+    --bg-tertiary: #334155;
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+    --border-color: #334155;
+    --accent-primary: #818cf8;
+    --accent-primary-hover: #6366f1;
+    --accent-secondary: #34d399;
+    --accent-danger: #fb7185;
+    --accent-warning: #fbbf24;
+    --success-bg: #105943;
+    --success-text: #a7f3d0;
+    --warning-bg: #92400e;
+    --warning-text: #fde68a;
+}
+
+/* ==========================================================================
+   2. Keyframe Animations
+   ========================================================================== */
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes scaleIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+/* ==========================================================================
+   3. Global Styles & Resets
+   ========================================================================== */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+    font-family: var(--font-sans);
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    line-height: 1.6;
+    transition: var(--transition-medium);
+}
+a { color: var(--accent-primary); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ==========================================================================
+   4. Layout & App Structure
+   ========================================================================== */
+#root, .app-container { display: flex; flex-direction: column; min-height: 100vh; }
+.app-container { flex-direction: row; }
+.main-content { flex: 1; padding: 2rem; overflow-y: auto; }
+.app-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1.5rem;
+    background-color: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
+    position: sticky; top: 0; z-index: 1000;
+    box-shadow: var(--shadow-sm);
+}
+.app-header h1 { font-size: 1.5rem; font-weight: 700; }
+.header-actions { display: flex; align-items: center; gap: 1rem; }
+.theme-toggle { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-primary); }
+
+/* Sidebar */
+.app-sidebar { width: 250px; background-color: var(--bg-secondary); padding: 1.5rem 1rem; border-right: 1px solid var(--border-color); display: flex; flex-direction: column; transition: var(--transition-medium); }
+.app-sidebar nav { flex-grow: 1; }
+.app-sidebar ul { list-style: none; }
+.app-sidebar li { margin-bottom: 0.5rem; }
+.app-sidebar a { display: block; padding: 0.75rem 1rem; border-radius: 8px; color: var(--text-secondary); font-weight: 500; transition: var(--transition-fast); }
+.app-sidebar a:hover { background-color: var(--bg-tertiary); color: var(--text-primary); text-decoration: none; }
+.app-sidebar a.active { background: linear-gradient(90deg, var(--accent-primary), var(--accent-primary-hover)); color: white; box-shadow: var(--shadow-md); }
+
+/* ==========================================================================
+   5. General Components (Forms, Buttons, Panels)
+   ========================================================================== */
+.panel { background-color: var(--bg-secondary); padding: 2rem; border-radius: 12px; border: 1px solid var(--border-color); box-shadow: var(--shadow-md); animation: fadeUp 0.5s ease-out; }
+.form-group { margin-bottom: 1rem; }
+.form-group label { display: block; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.5rem; color: var(--text-secondary); }
+.form-input, .form-select { width: 100%; padding: 0.75rem 1rem; border: 1px solid var(--border-color); background-color: var(--bg-tertiary); color: var(--text-primary); border-radius: 8px; font-size: 1rem; transition: var(--transition-fast); }
+.form-input:focus, .form-select:focus { outline: none; border-color: var(--accent-primary); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-primary) 20%, transparent); }
+.form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; }
+.btn { padding: 0.75rem 1.5rem; border-radius: 8px; font-weight: 600; cursor: pointer; transition: var(--transition-fast); border: none; }
+.btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-primary { background: linear-gradient(90deg, var(--accent-primary), var(--accent-primary-hover)); color: white; }
+.w-full { width: 100%; }
+.mb-4 { margin-bottom: 1rem; }
+
+/* Action Buttons */
+.action-btn { background-color: var(--bg-tertiary); color: var(--text-primary); border: 1px solid var(--border-color); }
+.btn-edit { padding: 0.25rem 0.75rem; font-size: 0.875rem; background-color: var(--bg-secondary); border: 1px solid var(--border-color); color: var(--text-primary); }
+.btn-danger-small { padding: 0.25rem 0.75rem; font-size: 0.875rem; background-color: var(--accent-danger); color: white; }
+
+/* ==========================================================================
+   6. Page-Specific Styles
+   ========================================================================== */
+/* Auth Page */
+.auth-container { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 1rem; }
+.auth-panel { width: 100%; max-width: 450px; text-align: center; }
+.auth-panel h2 { font-size: 2rem; margin-bottom: 0.5rem; }
+.auth-panel p { color: var(--text-secondary); margin-bottom: 2rem; }
+.auth-switch button { background: none; border: none; color: var(--accent-primary); cursor: pointer; font-weight: 500; }
+
+/* Profile Page */
+.profile-page-container { max-width: 800px; margin: 0 auto; }
+.profile-header { display: flex; align-items: center; gap: 1.5rem; margin-bottom: 1.5rem; }
+.avatar-preview { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 3px solid var(--border-color); box-shadow: var(--shadow-md); }
+.avatar-upload { position: relative; text-align: center; }
+.avatar-upload .btn-edit { margin-top: 0.5rem; }
+
+/* ==========================================================================
+   7. Component-Specific Styles
+   ========================================================================== */
+/* Header User Menu */
+.user-menu { position: relative; }
+.user-menu .profile-display { display: flex; align-items: center; gap: 0.75rem; cursor: pointer; }
+.header-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border-color); }
+.user-menu .dropdown-menu { display: none; position: absolute; right: 0; top: 120%; background-color: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 8px; min-width: 180px; z-index: 1100; box-shadow: var(--shadow-lg); animation: fadeUp 0.2s ease-out; }
+.user-menu:hover .dropdown-menu { display: block; }
+.dropdown-menu a, .dropdown-menu button { display: flex; align-items: center; gap: 0.75rem; width: 100%; text-align: left; padding: 0.75rem 1rem; background: none; border: none; color: var(--text-primary); font-size: 1rem; cursor: pointer; }
+.dropdown-menu a:hover, .dropdown-menu button:hover { background-color: var(--bg-tertiary); text-decoration: none; }
+.btn-signout-dropdown { color: var(--accent-danger) !important; }
+
+/* Subject/Test/Assignment Cards */
+.subject-card { background-color: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: var(--shadow-sm); transition: var(--transition-medium); animation: fadeUp 0.4s ease-out; }
+.subject-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
+.subject-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem; gap: 1rem; }
+.subject-card-header h4 { font-size: 1.25rem; margin: 0; font-weight: 600; }
+.subject-card-header h5 { font-size: 1.1rem; margin: 0; font-weight: 600; }
+.professor-name { color: var(--text-secondary); font-size: 0.9rem; }
+.subject-card-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.action-dropdown { width: auto; min-width: 120px; }
+
+/* Subject Stats */
+.subject-stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 1.5rem; text-align: center; margin: 1.5rem 0; }
+.subject-stat h5 { color: var(--text-secondary); font-size: 0.8rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+.subject-stat p { font-size: 1.5rem; font-weight: 700; color: var(--text-primary); }
+.goal-progress { width: 100%; margin-top: 0.5rem; }
+.progress-bar-labels { display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.25rem; }
+.progress-bar-container { height: 10px; background-color: var(--bg-tertiary); border-radius: 5px; position: relative; overflow: hidden; }
+.progress-bar-fill { height: 100%; background-color: var(--accent-primary); border-radius: 5px; transition: width 0.8s ease-in-out; }
+.progress-bar-goal { position: absolute; top: 0; height: 100%; width: 3px; background-color: var(--accent-danger); }
+.predictors-grid { margin-top: 1rem; }
+.predictor-panel { padding: 1rem; border-radius: 8px; text-align: center; }
+.predictor-panel.success { background-color: var(--success-bg); color: var(--success-text); }
+.predictor-panel.warning { background-color: var(--warning-bg); color: var(--warning-text); }
+
+/* Schedule Display */
+.collapsible-section { margin-bottom: 0.5rem; }
+.collapsible-header { padding: 0.75rem 1rem; background-color: var(--bg-tertiary); cursor: pointer; font-weight: 600; border-radius: 4px; display: flex; align-items: center; }
+.month-header { background-color: var(--bg-secondary); border: 1px solid var(--border-color); font-size: 1.1rem; }
+.collapsible-content { padding: 0.5rem 0 0.5rem 1.5rem; border-left: 2px solid var(--border-color); margin-left: 0.5rem; }
+.collapse-icon { margin-right: 0.5rem; transition: transform 0.2s; }
+.collapse-icon.expanded { transform: rotate(90deg); }
+.day-group { margin-bottom: 1rem; }
+.day-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border-color); }
+.schedule-table { width: 100%; border-collapse: collapse; }
+.schedule-table td { padding: 0.75rem; border-bottom: 1px solid var(--bg-tertiary); }
+.schedule-actions { display: flex; gap: 0.5rem; align-items: center; justify-content: flex-end; }
+.btn-attendance { padding: 0.5rem 1rem; border: 1px solid transparent; }
+.btn-attendance.present { background-color: var(--accent-secondary); color: white; }
+.btn-attendance.absent { background-color: var(--accent-danger); color: white; }
+.btn-attendance:not(.active) { background-color: var(--bg-tertiary); color: var(--text-secondary); }
+.no-class-row { background-color: color-mix(in srgb, var(--border-color) 30%, transparent); color: var(--text-secondary); }
+.no-class-display { display: flex; align-items: center; gap: 0.5rem; font-style: italic; }
+
+/* ==========================================================================
+   8. Modals, Loaders, and Misc
+   ========================================================================== */
+.loader-container { display: flex; justify-content: center; align-items: center; height: 100vh; }
+.loader { border: 5px solid var(--bg-tertiary); border-top: 5px solid var(--accent-primary); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; }
+.modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0, 0, 0, 0.6); display: flex; align-items: center; justify-content: center; z-index: 2000; animation: fadeIn 0.3s ease-out; }
+.modal-content { width: 90%; max-width: 500px; animation: scaleIn 0.3s ease-out; }
+.alert-list { list-style-type: none; }
+.alert-list li { padding: 0.75rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; }
+.alert-list li:last-child { border-bottom: none; }
+.alert-date { font-size: 0.9rem; color: var(--text-secondary); }
+
+/* ==========================================================================
+   9. Calendar & Charts
+   ========================================================================== */
+.rbc-calendar { background-color: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 12px; padding: 1rem; box-shadow: var(--shadow-md); }
+.rbc-toolbar button { background-color: var(--accent-primary) !important; color: white !important; border: none !important; opacity: 1 !important; border-radius: 6px !important; }
+.rbc-header { border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 10px; }
+.rbc-event { padding: 4px 8px !important; color: white !important; border-radius: 4px !important; border: none !important; box-shadow: var(--shadow-sm); }
+.event-perfect { background-color: var(--accent-secondary) !important; }
+.event-absent { background-color: var(--accent-danger) !important; }
+.event-mixed { background-color: var(--accent-warning) !important; }
+.event-holiday { background-color: var(--text-secondary) !important; }
+.event-neutral { background-color: var(--accent-primary) !important; opacity: 0.7; }
+
+.charts-container { display: flex; gap: 1.5rem; flex-wrap: wrap; }
+.chart-wrapper { background: var(--bg-secondary); padding: 1.5rem; border-radius: 12px; flex: 1; min-width: 300px; box-shadow: var(--shadow-md); }
+
+/* ==========================================================================
+   10. Responsive Styles
+   ========================================================================== */
+.hamburger-btn { display: none; font-size: 1.5rem; background: none; border: none; color: var(--text-primary); cursor: pointer; }
+
+@media (max-width: 768px) {
+    .hamburger-btn { display: block; }
+    .app-sidebar { position: fixed; left: -270px; top: 0; bottom: 0; z-index: 3000; box-shadow: var(--shadow-lg); }
+    .sidebar-container.open .app-sidebar { left: 0; }
+    .sidebar-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 2999; animation: fadeIn 0.3s; }
+    .main-content { padding: 1rem; }
+    .form-grid { grid-template-columns: 1fr; }
+    .charts-container { flex-direction: column; }
+    .schedule-actions { flex-direction: column; align-items: flex-end; }
+    .subject-stats-grid { grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+    .subject-card-header { flex-direction: column; align-items: stretch; gap: 0.5rem; }
+}
