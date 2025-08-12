@@ -405,3 +405,38 @@ input:checked + .slider:before {
   background-color: white; /* Always white when active */
   transform: translateX(22px);
 }
+/* === Granular Notification Settings CSS === */
+
+.notification-category {
+    padding: 1rem 0;
+    border-bottom: 1px solid var(--border-color);
+}
+.notification-category:last-of-type {
+    border-bottom: none;
+}
+
+.notification-category h5 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+.notification-category p {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+}
+
+.toggle-group {
+    display: flex;
+    gap: 2rem;
+}
+
+.toggle-switch-small {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 1rem;
+    color: var(--text-primary);
+    cursor: pointer;
+}
