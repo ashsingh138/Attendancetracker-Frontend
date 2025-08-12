@@ -113,6 +113,8 @@ function SubjectForm({ subject, onSave, onCancel, semesterId }) {
         if (!semesterId) {
             alert("Please set an active semester before adding subjects."); setLoading(false); return;
         }
+        // The scheduleSlots array, including the start_time, is sent directly.
+        // No UTC conversion is needed here as the backend handles the time string.
         const payload = { semester_id: semesterId, subject_code: subjectCode, subject_name: subjectName, professor_name: professorName, schedule: scheduleSlots, attendance_goal: attendanceGoal };
         try {
             if (subject) { await apiClient.put(`/subjects/${subject._id}`, payload); } else { await apiClient.post('/subjects', payload); }
