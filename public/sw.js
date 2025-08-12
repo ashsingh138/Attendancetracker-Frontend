@@ -1,12 +1,12 @@
-// This is the service worker file
-
+// sw.js (Corrected)
 self.addEventListener('push', event => {
   const data = event.data.json();
   
   const options = {
     body: data.body,
-    icon: 'Frontend\client\public\IIT-Kharagpur-logo-01.png', // Make sure you have an icon in /public
-    badge: 'Frontend\client\public\download.png', // And a badge
+    // Correct paths start with a slash '/'
+    icon: '/IIT-Kharagpur-logo-01.png', 
+    badge: '/download.png',
   };
 
   event.waitUntil(
