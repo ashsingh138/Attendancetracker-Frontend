@@ -42,6 +42,38 @@ const SubjectTrendGraph = ({ subject, schedule }) => {
     return <Line data={data} options={options} />;
 };
 
+// --- Inner Component: AttendanceLog ---
+const AttendanceLog = ({ subject, schedule }) => {
+    const pastClasses = schedule
+        .filter(item => item.subject_id === subject._id && new Date(item.date) <= new Date())
+        .sort((a, b) => new Date(b.date) - new Date(a.date)); // Sort descending to show most recent first
+
+    if (pastClasses.length === 0) {
+        return <p>No past classes to display for this subject.</p>;
+    }
+
+    return (
+        <div className="attendance-log-container">
+            <h4>Detailed Attendance Log</h4>
+            <div className="attendance-log-list">
+                {pastClasses.map(item => (
+                    <div key={item._id} className="attendance-log-item">
+                        <div className="log-item-date">
+                            <span>{new Date(item.date + 'T00:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
+                            <span className="log-item-day">{days[new Date(item.date + 'T00:00:00').getDay()]}</span>
+                        </div>
+                        <div className="log-item-duration">{item.duration} hr(s)</div>
+                        <div className={`log-item-status status-${item.personal_status || 'not_marked'}`}>
+                            {item.personal_status || 'not marked'}
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+};
+
+
 // --- Inner Component: SubjectStats ---
 const SubjectStats = ({ subject, schedule }) => {
     const totalSemesterClasses = schedule.filter(s => s.subject_id === subject._id);
@@ -155,6 +187,7 @@ function SubjectForm({ subject, onSave, onCancel, semesterId }) {
 function SubjectManager({ subjects, schedule, onUpdate, semesterId }) {
     const [isEditing, setIsEditing] = useState(null);
     const [expandedGraph, setExpandedGraph] = useState(null);
+    const [viewingLog, setViewingLog] = useState(null); // New state to track which log is open
 
     const handleSaveSuccess = () => { 
         onUpdate(); 
@@ -234,12 +267,14 @@ function SubjectManager({ subjects, schedule, onUpdate, semesterId }) {
                                 </div>
                                 <div className="subject-card-actions">
                                     <button onClick={() => handleExportCsv(s)} className="btn-edit">Export CSV</button>
-                                    <button onClick={() => setExpandedGraph(expandedGraph === s._id ? null : s._id)} className="btn-edit">{expandedGraph === s._id ? 'Hide' : 'Trend'}</button>
+                                    <button onClick={() => setViewingLog(viewingLog === s._id ? null : s._id)} className="btn-edit">{viewingLog === s._id ? 'Hide Log' : 'See Attendance'}</button>
+                                    <button onClick={() => setExpandedGraph(expandedGraph === s._id ? null : s._id)} className="btn-edit">{expandedGraph === s._id ? 'Hide Trend' : 'Show Trend'}</button>
                                     <button onClick={() => setIsEditing(s)} className="btn-edit">Edit</button>
                                     <button onClick={() => deleteSubject(s._id)} className="btn-danger-small">Delete</button>
                                 </div>
                             </div>
                             {expandedGraph === s._id && <div className="trend-graph-container"><SubjectTrendGraph subject={s} schedule={schedule} /></div>}
+                            {viewingLog === s._id && <div className="attendance-log-wrapper"><AttendanceLog subject={s} schedule={schedule} /></div>}
                             <SubjectStats subject={s} schedule={schedule} />
                         </div>
                     ))}
