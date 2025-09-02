@@ -74,35 +74,80 @@ const AttendanceLog = ({ subject, schedule }) => {
 };
 
 
-// --- Inner Component: SubjectStats ---
+// --- Inner Component: SubjectStats (MODIFIED WITH NEW LOGIC) ---
 const SubjectStats = ({ subject, schedule }) => {
+    // --- Data Calculation ---
     const totalSemesterClasses = schedule.filter(s => s.subject_id === subject._id);
     const validPastClasses = totalSemesterClasses.filter(item => item.status !== 'no_class' && new Date(item.date) <= new Date());
+    
+    // Personal stats (for display)
     const overallTotalHours = validPastClasses.reduce((acc, item) => acc + (item.duration || 0), 0);
     const overallAttendedHours = validPastClasses.filter(item => item.personal_status === 'present').reduce((acc, item) => acc + (item.duration || 0), 0);
     const currentPercentage = overallTotalHours > 0 ? (overallAttendedHours / overallTotalHours) * 100 : 100;
+
+    // Official stats (for predictors and display)
     const officialClasses = validPastClasses.filter(item => item.status === 'present' || item.status === 'absent');
     const officialTotalHours = officialClasses.reduce((acc, item) => acc + (item.duration || 0), 0);
     const officialAttendedHours = officialClasses.filter(item => item.status === 'present').reduce((acc, item) => acc + (item.duration || 0), 0);
-    const officialPercentage = officialTotalHours > 0 ? ((officialAttendedHours / officialTotalHours) * 100).toFixed(1) : 'N/A';
+    const officialPercentage = officialTotalHours > 0 ? (officialAttendedHours / officialTotalHours) * 100 : 100;
+
+    // --- Predictor Logic ---
     const goal = subject.attendance_goal || 75;
     const totalSemesterHours = totalSemesterClasses.reduce((acc, item) => acc + (item.duration || 0), 0);
-    const futureHours = totalSemesterHours - overallTotalHours;
-    const bunkableHours = Math.floor(overallAttendedHours + futureHours - (goal / 100) * totalSemesterHours);
-    const catchUpHours = Math.ceil(((goal / 100) * totalSemesterHours - overallAttendedHours) / (1 - (goal / 100)));
+    
+    // Use official past hours to determine future hours
+    const futureHours = totalSemesterHours - officialTotalHours;
+    
+    // Calculate total hours needed for the whole semester to meet the goal
+    const totalRequiredHoursForGoal = (goal / 100) * totalSemesterHours;
+
+    // BUNK METER LOGIC: How many future hours can be missed?
+    const maxPossibleAttendedHours = officialAttendedHours + futureHours;
+    const bunkableHours = Math.floor(maxPossibleAttendedHours - totalRequiredHoursForGoal);
+
+    // CATCH-UP CALCULATOR LOGIC: How many future hours must be attended?
+    const requiredFutureAttendance = Math.ceil(totalRequiredHoursForGoal - officialAttendedHours);
 
     return (
         <div className="subject-stats-container">
-            <div className="goal-progress"><div className="progress-bar-labels"><span>Your %: {currentPercentage.toFixed(1)}%</span><span>Goal: {goal}%</span></div><div className="progress-bar-container"><div className="progress-bar-fill" style={{ width: `${currentPercentage}%` }}></div><div className="progress-bar-goal" style={{ left: `${goal}%` }}></div></div></div>
+            <div className="goal-progress">
+                <div className="progress-bar-labels">
+                    <span>Your %: {currentPercentage.toFixed(1)}%</span>
+                    <span>Official %: {officialPercentage.toFixed(1)}%</span>
+                    <span>Goal: {goal}%</span>
+                </div>
+                <div className="progress-bar-container">
+                    <div className="progress-bar-fill" style={{ width: `${officialPercentage}%` }}></div>
+                    <div className="progress-bar-goal" style={{ left: `${goal}%` }}></div>
+                </div>
+            </div>
             <div className="subject-stats-grid">
                 <div className="subject-stat"><h5>Personal Attended</h5><p>{overallAttendedHours} hrs</p></div>
                 <div className="subject-stat"><h5>Personal Total</h5><p>{overallTotalHours} hrs</p></div>
                 <div className="subject-stat"><h5>Personal %</h5><p>{currentPercentage.toFixed(1)}%</p></div>
                 <div className="subject-stat"><h5>Official Attended</h5><p>{officialAttendedHours} hrs</p></div>
                 <div className="subject-stat"><h5>Official Total</h5><p>{officialTotalHours} hrs</p></div>
-                <div className="subject-stat"><h5>Official %</h5><p>{officialPercentage}%</p></div>
+                <div className="subject-stat"><h5>Official %</h5><p>{officialPercentage.toFixed(1)}%</p></div>
             </div>
-            <div className="predictors-grid">{currentPercentage >= goal ? (<div className="predictor-panel success"><h5>Bunk Meter</h5><p>You can miss up to <strong>{bunkableHours < 0 ? 0 : bunkableHours} more hours</strong> and still meet your goal.</p></div>) : (<div className="predictor-panel warning"><h5>Catch-Up Calculator</h5>{catchUpHours > 0 && catchUpHours <= futureHours ? (<p>You must attend the next <strong>{catchUpHours} consecutive hours</strong> to reach your goal.</p>) : (<p>Your {goal}% attendance goal is no longer reachable this semester.</p>)}</div>)}</div>
+            
+            {/* --- UPDATED PREDICTORS GRID USING NEW LOGIC --- */}
+            <div className="predictors-grid">
+                {officialPercentage >= goal ? (
+                    <div className="predictor-panel success">
+                        <h5>Bunk Meter 📈</h5>
+                        <p>You can miss up to <strong>{bunkableHours < 0 ? 0 : bunkableHours} more hours</strong> and still meet your {goal}% goal.</p>
+                    </div>
+                ) : (
+                    <div className="predictor-panel warning">
+                        <h5>Catch-Up Calculator 📉</h5>
+                        {requiredFutureAttendance <= futureHours ? (
+                            <p>You must attend at least <strong>{requiredFutureAttendance < 0 ? 0 : requiredFutureAttendance} hours</strong> of the remaining <strong>{futureHours} hours</strong> to reach your goal.</p>
+                        ) : (
+                            <p>Your {goal}% attendance goal is no longer reachable this semester. 😥</p>
+                        )}
+                    </div>
+                )}
+            </div>
         </div>
     );
 };
@@ -145,8 +190,6 @@ function SubjectForm({ subject, onSave, onCancel, semesterId }) {
         if (!semesterId) {
             alert("Please set an active semester before adding subjects."); setLoading(false); return;
         }
-        // The scheduleSlots array, including the start_time, is sent directly.
-        // No UTC conversion is needed here as the backend handles the time string.
         const payload = { semester_id: semesterId, subject_code: subjectCode, subject_name: subjectName, professor_name: professorName, schedule: scheduleSlots, attendance_goal: attendanceGoal };
         try {
             if (subject) { await apiClient.put(`/subjects/${subject._id}`, payload); } else { await apiClient.post('/subjects', payload); }
@@ -187,7 +230,7 @@ function SubjectForm({ subject, onSave, onCancel, semesterId }) {
 function SubjectManager({ subjects, schedule, onUpdate, semesterId }) {
     const [isEditing, setIsEditing] = useState(null);
     const [expandedGraph, setExpandedGraph] = useState(null);
-    const [viewingLog, setViewingLog] = useState(null); // New state to track which log is open
+    const [viewingLog, setViewingLog] = useState(null);
 
     const handleSaveSuccess = () => { 
         onUpdate(); 
