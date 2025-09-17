@@ -7,8 +7,9 @@ ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, PointE
 
 const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
-// --- Inner Component: SubjectTrendGraph ---
+// --- Inner Component: SubjectTrendGraph (No changes needed here) ---
 const SubjectTrendGraph = ({ subject, schedule }) => {
+    // ... (existing code is correct)
     const subjectClasses = schedule
         .filter(item => item.subject_id === subject._id && item.status !== 'no_class' && new Date(item.date) <= new Date())
         .sort((a, b) => new Date(a.date) - new Date(b.date));
@@ -42,11 +43,12 @@ const SubjectTrendGraph = ({ subject, schedule }) => {
     return <Line data={data} options={options} />;
 };
 
-// --- Inner Component: AttendanceLog ---
+// --- Inner Component: AttendanceLog (No changes needed here) ---
 const AttendanceLog = ({ subject, schedule }) => {
+    // ... (existing code is correct)
     const pastClasses = schedule
         .filter(item => item.subject_id === subject._id && new Date(item.date) <= new Date())
-        .sort((a, b) => new Date(b.date) - new Date(a.date)); // Sort descending to show most recent first
+        .sort((a, b) => new Date(b.date) - new Date(a.date)); // Sort descending
 
     if (pastClasses.length === 0) {
         return <p>No past classes to display for this subject.</p>;
@@ -74,38 +76,52 @@ const AttendanceLog = ({ subject, schedule }) => {
 };
 
 
-// --- Inner Component: SubjectStats (MODIFIED WITH NEW LOGIC) ---
+// --- Inner Component: SubjectStats (UPDATED WITH CORRECTED LOGIC) ---
 const SubjectStats = ({ subject, schedule }) => {
-    // --- Data Calculation ---
-    const totalSemesterClasses = schedule.filter(s => s.subject_id === subject._id);
-    const validPastClasses = totalSemesterClasses.filter(item => item.status !== 'no_class' && new Date(item.date) <= new Date());
-    
-    // Personal stats (for display)
-    const overallTotalHours = validPastClasses.reduce((acc, item) => acc + (item.duration || 0), 0);
-    const overallAttendedHours = validPastClasses.filter(item => item.personal_status === 'present').reduce((acc, item) => acc + (item.duration || 0), 0);
+    // --- Personal Stats Calculation (remains the same) ---
+    const personalPastClasses = schedule.filter(item => 
+        item.subject_id === subject._id && 
+        item.status !== 'no_class' && 
+        new Date(item.date) <= new Date()
+    );
+    const overallTotalHours = personalPastClasses.reduce((acc, item) => acc + (item.duration || 0), 0);
+    const overallAttendedHours = personalPastClasses
+        .filter(item => item.personal_status === 'present')
+        .reduce((acc, item) => acc + (item.duration || 0), 0);
     const currentPercentage = overallTotalHours > 0 ? (overallAttendedHours / overallTotalHours) * 100 : 100;
 
-    // Official stats (for predictors and display)
-    const officialClasses = validPastClasses.filter(item => item.status === 'present' || item.status === 'absent');
-    const officialTotalHours = officialClasses.reduce((acc, item) => acc + (item.duration || 0), 0);
-    const officialAttendedHours = officialClasses.filter(item => item.status === 'present').reduce((acc, item) => acc + (item.duration || 0), 0);
+    // --- Official & Predictor Stats (NEW, CORRECTED LOGIC) ---
+    
+    // 1. Base all calculations on classes that are NOT holidays ('no_class').
+    const conductedClasses = schedule.filter(s => s.subject_id === subject._id && s.status !== 'no_class');
+    const totalConductedSemesterHours = conductedClasses.reduce((acc, item) => acc + (item.duration || 0), 0);
+
+    // 2. Calculate stats based on past, officially marked classes.
+    const officialPastClasses = conductedClasses.filter(item => 
+        (item.status === 'present' || item.status === 'absent') && 
+        new Date(item.date) <= new Date()
+    );
+    const officialTotalHours = officialPastClasses.reduce((acc, item) => acc + (item.duration || 0), 0);
+    const officialAttendedHours = officialPastClasses
+        .filter(item => item.status === 'present')
+        .reduce((acc, item) => acc + (item.duration || 0), 0);
     const officialPercentage = officialTotalHours > 0 ? (officialAttendedHours / officialTotalHours) * 100 : 100;
-
-    // --- Predictor Logic ---
+    
+    // 3. Calculate remaining hours based on future classes that are not holidays.
+    const remainingFutureClasses = conductedClasses.filter(item => new Date(item.date) > new Date());
+    const remainingHours = remainingFutureClasses.reduce((acc, item) => acc + (item.duration || 0), 0);
+    
+    // --- Predictor Logic using the corrected base values ---
     const goal = subject.attendance_goal || 75;
-    const totalSemesterHours = totalSemesterClasses.reduce((acc, item) => acc + (item.duration || 0), 0);
-    
-    // Use official past hours to determine future hours
-    const futureHours = totalSemesterHours - officialTotalHours;
-    
-    // Calculate total hours needed for the whole semester to meet the goal
-    const totalRequiredHoursForGoal = (goal / 100) * totalSemesterHours;
 
-    // BUNK METER LOGIC: How many future hours can be missed?
-    const maxPossibleAttendedHours = officialAttendedHours + futureHours;
+    // The total hours needed for the goal is now based on the conducted hours.
+    const totalRequiredHoursForGoal = (goal / 100) * totalConductedSemesterHours;
+
+    // BUNK METER LOGIC: How many of the remaining hours can be missed?
+    const maxPossibleAttendedHours = officialAttendedHours + remainingHours;
     const bunkableHours = Math.floor(maxPossibleAttendedHours - totalRequiredHoursForGoal);
 
-    // CATCH-UP CALCULATOR LOGIC: How many future hours must be attended?
+    // CATCH-UP CALCULATOR LOGIC: How many of the remaining hours must be attended?
     const requiredFutureAttendance = Math.ceil(totalRequiredHoursForGoal - officialAttendedHours);
 
     return (
@@ -130,7 +146,7 @@ const SubjectStats = ({ subject, schedule }) => {
                 <div className="subject-stat"><h5>Official %</h5><p>{officialPercentage.toFixed(1)}%</p></div>
             </div>
             
-            {/* --- UPDATED PREDICTORS GRID USING NEW LOGIC --- */}
+            {/* --- PREDICTORS GRID USING NEW LOGIC --- */}
             <div className="predictors-grid">
                 {officialPercentage >= goal ? (
                     <div className="predictor-panel success">
@@ -140,8 +156,9 @@ const SubjectStats = ({ subject, schedule }) => {
                 ) : (
                     <div className="predictor-panel warning">
                         <h5>Catch-Up Calculator 📉</h5>
-                        {requiredFutureAttendance <= futureHours ? (
-                            <p>You must attend at least <strong>{requiredFutureAttendance < 0 ? 0 : requiredFutureAttendance} hours</strong> of the remaining <strong>{futureHours} hours</strong> to reach your goal.</p>
+                        {/* The variable `futureHours` is now correctly named `remainingHours` */}
+                        {requiredFutureAttendance <= remainingHours ? (
+                            <p>You must attend at least <strong>{requiredFutureAttendance < 0 ? 0 : requiredFutureAttendance} hours</strong> of the remaining <strong>{remainingHours} hours</strong> to reach your goal.</p>
                         ) : (
                             <p>Your {goal}% attendance goal is no longer reachable this semester. 😥</p>
                         )}
@@ -152,8 +169,9 @@ const SubjectStats = ({ subject, schedule }) => {
     );
 };
 
-// --- Inner Component: SubjectForm ---
+// --- Inner Component: SubjectForm (No changes needed here) ---
 function SubjectForm({ subject, onSave, onCancel, semesterId }) {
+    // ... (existing code is correct)
     const [subjectCode, setSubjectCode] = useState('');
     const [subjectName, setSubjectName] = useState('');
     const [professorName, setProfessorName] = useState('');
@@ -226,7 +244,7 @@ function SubjectForm({ subject, onSave, onCancel, semesterId }) {
     );
 }
 
-// --- Main SubjectManager Component ---
+// --- Main SubjectManager Component (No changes needed here) ---
 function SubjectManager({ subjects, schedule, onUpdate, semesterId }) {
     const [isEditing, setIsEditing] = useState(null);
     const [expandedGraph, setExpandedGraph] = useState(null);
@@ -247,7 +265,7 @@ function SubjectManager({ subjects, schedule, onUpdate, semesterId }) {
             }
         }
     };
-
+    
     const handleExportCsv = (subject) => {
         const subjectRecords = schedule
             .filter(item => item.subject_id === subject._id && new Date(item.date) < new Date())
@@ -281,6 +299,7 @@ function SubjectManager({ subjects, schedule, onUpdate, semesterId }) {
         link.click();
         document.body.removeChild(link);
     };
+
 
     return (
         <div className="panel">
