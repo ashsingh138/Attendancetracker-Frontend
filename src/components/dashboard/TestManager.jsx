@@ -1,7 +1,9 @@
+// src/components/dashboard/TestManager.jsx
 import React, { useState, useEffect } from 'react';
 import apiClient from '../../api';
 
 function TestForm({ subjects, test, onTestModified, onCancel }) {
+    // (This component is unchanged)
     const [subjectId, setSubjectId] = useState('');
     const [testName, setTestName] = useState('');
     const [date, setDate] = useState('');
@@ -12,7 +14,6 @@ function TestForm({ subjects, test, onTestModified, onCancel }) {
         if (isEditMode) {
             setSubjectId(test.subject_id);
             setTestName(test.test_name);
-            // When editing, convert the UTC date from the DB back to local for display
             const localDate = new Date(test.test_datetime);
             setDate(localDate.toISOString().split('T')[0]);
             setTime(localDate.toTimeString().slice(0,5));
@@ -23,11 +24,7 @@ function TestForm({ subjects, test, onTestModified, onCancel }) {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        
-        // Create a date object from the local date and time inputs from the form
         const localDateTime = new Date(`${date}T${time}`);
-        
-        // Convert the local date to a UTC ISO string before sending to the backend
         const test_datetime = localDateTime.toISOString(); 
 
         const payload = { subject_id: subjectId, test_name: testName, test_datetime };
@@ -64,10 +61,12 @@ function TestForm({ subjects, test, onTestModified, onCancel }) {
     );
 }
 
-function TestManager({ subjects, tests, onUpdate }) {
+// --- Main TestManager Component (UPDATED with isReadOnly) ---
+function TestManager({ subjects, tests, onUpdate, isReadOnly = false }) {
     const [isEditing, setIsEditing] = useState(null);
 
     const handleStatusChange = async (testId, newStatus) => {
+        if (isReadOnly) return; // Don't allow if read-only
         try {
             await apiClient.put(`/tests/${testId}`, { status: newStatus });
             onUpdate();
@@ -75,6 +74,7 @@ function TestManager({ subjects, tests, onUpdate }) {
     };
 
     const deleteTest = async (testId) => {
+        if (isReadOnly) return; // Don't allow if read-only
         if (window.confirm("Are you sure?")) {
             try {
                 await apiClient.delete(`/tests/${testId}`);
@@ -83,15 +83,33 @@ function TestManager({ subjects, tests, onUpdate }) {
         }
     };
     
+    const handleSetEditing = (test) => {
+        if (isReadOnly) return; // Don't allow if read-only
+        setIsEditing(test);
+    };
+    
     return (
-        <div className="panel" style={{ marginTop: '2rem' }}>
+        <div className="panel" style={{ marginTop: isReadOnly ? '0' : '2rem' }}>
             <h3 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>Test Schedule</h3>
-            <TestForm 
-                subjects={subjects} test={isEditing}
-                onTestModified={() => { onUpdate(); setIsEditing(null); }}
-                onCancel={() => setIsEditing(null)}
-            />
-            <h4 style={{ fontSize: '1.2rem', marginTop: '2rem', marginBottom: '1rem', borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>All Tests</h4>
+            
+            {/* Check isReadOnly before showing the form */}
+            {!isReadOnly && (
+                <TestForm 
+                    subjects={subjects} test={isEditing}
+                    onTestModified={() => { onUpdate(); setIsEditing(null); }}
+                    onCancel={() => setIsEditing(null)}
+                />
+            )}
+
+            <h4 style={{ 
+                fontSize: '1.2rem', 
+                marginTop: isReadOnly ? '0' : '2rem', // Adjust margin
+                marginBottom: '1rem', 
+                borderTop: isReadOnly ? 'none' : '1px solid var(--border-color)', // Adjust border
+                paddingTop: isReadOnly ? '0' : '1rem' 
+            }}>
+                All Tests
+            </h4>
             <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
                 {tests.length > 0 ? tests.sort((a,b) => new Date(a.test_datetime) - new Date(b.test_datetime)).map(item => (
                         <div key={item._id} className="subject-card">
@@ -107,13 +125,21 @@ function TestManager({ subjects, tests, onUpdate }) {
                                     </p>
                                 </div>
                                 <div className="subject-card-actions">
-                                    <select value={item.status} onChange={(e) => handleStatusChange(item._id, e.target.value)} className="form-select action-dropdown">
-                                        <option value="Pending">Pending</option>
-                                        <option value="Completed">Completed</option>
-                                        <option value="Cancelled">Cancelled</option>
-                                    </select>
-                                    <button onClick={() => setIsEditing(item)} className="btn-edit">Edit</button>
-                                    <button onClick={() => deleteTest(item._id)} className="btn-danger-small">Delete</button>
+                                    {/* Check isReadOnly before showing action buttons */}
+                                    {!isReadOnly ? (
+                                        <>
+                                            <select value={item.status} onChange={(e) => handleStatusChange(item._id, e.target.value)} className="form-select action-dropdown">
+                                                <option value="Pending">Pending</option>
+                                                <option value="Completed">Completed</option>
+                                                <option value="Cancelled">Cancelled</option>
+                                            </select>
+                                            <button onClick={() => handleSetEditing(item)} className="btn-edit">Edit</button>
+                                            <button onClick={() => deleteTest(item._id)} className="btn-danger-small">Delete</button>
+                                        </>
+                                    ) : (
+                                        // Show read-only status
+                                        <p style={{ fontWeight: 'bold', margin: 0 }}>Status: {item.status}</p>
+                                    )}
                                 </div>
                            </div>
                         </div>

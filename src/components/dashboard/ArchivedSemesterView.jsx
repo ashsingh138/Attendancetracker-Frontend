@@ -1,9 +1,9 @@
 // src/components/dashboard/ArchivedSemesterView.jsx
 import React, { useState, useEffect } from 'react';
 import apiClient from '../../api'; // Corrected path
-import DashboardCharts from './DashboardCharts'; // Reuse existing component
-import AttendanceCalendar from './AttendanceCalendar'; // Reuse existing component
-import TestManager from './TestManager'; // Reuse existing component
+import SubjectManager from './SubjectManager'; // Import SubjectManager
+import TestManager from './TestManager'; // Import TestManager
+import AssignmentManager from './AssignmentManager'; // Import AssignmentManager
 
 function ArchivedSemesterView({ semester }) {
     const [loading, setLoading] = useState(true);
@@ -12,7 +12,7 @@ function ArchivedSemesterView({ semester }) {
         subjects: [],
         schedule: [],
         tests: [],
-        assignments: [] // Added assignments
+        assignments: [] 
     });
 
     useEffect(() => {
@@ -20,18 +20,15 @@ function ArchivedSemesterView({ semester }) {
             if (!semester?._id) return;
             setLoading(true);
             try {
-                // --- UPDATED THIS SECTION ---
-                // Makes one call to the new consolidated endpoint
+                // This single API call gets all the data we need
                 const response = await apiClient.get(`/dashboard/semester/${semester._id}`);
                 
                 setSemesterData({
                     subjects: response.data.subjects,
                     schedule: response.data.attendanceRecords, // Use attendanceRecords for schedule
                     tests: response.data.tests,
-                    assignments: response.data.assignments // Store assignments
+                    assignments: response.data.assignments 
                 });
-                // --- END OF UPDATE ---
-
             } catch (err) {
                 setError('Failed to load semester details.');
                 console.error(err);
@@ -50,33 +47,37 @@ function ArchivedSemesterView({ semester }) {
 
     return (
         <div className="archived-view">
-            {/* 1. Re-use DashboardCharts for stats */}
-            <DashboardCharts 
+            <h2 style={{ textAlign: 'center', marginBottom: '1.5rem', color: 'var(--text-primary)' }}>
+                Archive: {semester.name} - {semester.year}
+            </h2>
+            
+            {/* Render SubjectManager in read-only mode */}
+            {/* This will show the list of subjects, stats, and logs you wanted */}
+            <SubjectManager 
                 subjects={subjects} 
                 schedule={schedule} 
-                semester={semester} 
+                onUpdate={() => {}} // Pass empty function
+                semesterId={semester._id}
+                isReadOnly={true} 
             />
             
-            {/* 2. Re-use AttendanceCalendar */}
-            <h3 style={{ fontSize: '1.5rem', marginTop: '2rem' }}>Attendance Calendar</h3>
-            <AttendanceCalendar schedule={schedule} />
-
-            {/* 3. Re-use TestManager in a read-only-ish way */}
-            {/* We pass an empty function to onUpdate to disable changes */}
-            {/* You could also pass a readOnly prop if you implemented it */}
-            <TestManager 
-                subjects={subjects} 
-                tests={tests} 
-                onUpdate={() => { alert('This semester is archived and read-only.'); }}
-            />
-            
-            {/* You can also display assignments if you want */}
-            {/* <AssignmentManager 
-                subjects={subjects} 
-                assignments={assignments} 
-                onUpdate={() => { alert('This semester is archived and read-only.'); }}
-            />
-            */}
+            <div className="academics-container" style={{marginTop: '2rem'}}>
+                {/* Render TestManager in read-only mode */}
+                <TestManager 
+                    subjects={subjects} 
+                    tests={tests} 
+                    onUpdate={() => {}} // Pass empty function
+                    isReadOnly={true}
+                />
+                
+                {/* Render AssignmentManager in read-only mode */}
+                <AssignmentManager
+                    subjects={subjects}
+                    assignments={assignments}
+                    onUpdate={() => {}} // Pass empty function
+                    isReadOnly={true}
+                />
+            </div>
         </div>
     );
 }

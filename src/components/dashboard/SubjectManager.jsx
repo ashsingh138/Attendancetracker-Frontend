@@ -1,3 +1,4 @@
+// src/components/dashboard/SubjectManager.jsx
 import React, { useState, useEffect } from 'react';
 import apiClient from '../../api';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, PointElement, LineElement, Filler } from 'chart.js';
@@ -7,9 +8,9 @@ ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, PointE
 
 const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
-// --- Inner Component: SubjectTrendGraph (No changes needed here) ---
+// --- Inner Component: SubjectTrendGraph ---
 const SubjectTrendGraph = ({ subject, schedule }) => {
-    // ... (existing code is correct)
+    // (This component is unchanged)
     const subjectClasses = schedule
         .filter(item => item.subject_id === subject._id && item.status !== 'no_class' && new Date(item.date) <= new Date())
         .sort((a, b) => new Date(a.date) - new Date(b.date));
@@ -43,9 +44,9 @@ const SubjectTrendGraph = ({ subject, schedule }) => {
     return <Line data={data} options={options} />;
 };
 
-// --- Inner Component: AttendanceLog (No changes needed here) ---
+// --- Inner Component: AttendanceLog ---
 const AttendanceLog = ({ subject, schedule }) => {
-    // ... (existing code is correct)
+    // (This component is unchanged)
     const pastClasses = schedule
         .filter(item => item.subject_id === subject._id && new Date(item.date) <= new Date())
         .sort((a, b) => new Date(b.date) - new Date(a.date)); // Sort descending
@@ -76,9 +77,10 @@ const AttendanceLog = ({ subject, schedule }) => {
 };
 
 
-// --- Inner Component: SubjectStats (UPDATED WITH CORRECTED LOGIC) ---
+// --- Inner Component: SubjectStats ---
 const SubjectStats = ({ subject, schedule }) => {
-    // --- Personal Stats Calculation (remains the same) ---
+    // (This component is unchanged)
+    // --- Personal Stats Calculation ---
     const personalPastClasses = schedule.filter(item => 
         item.subject_id === subject._id && 
         item.status !== 'no_class' && 
@@ -90,13 +92,10 @@ const SubjectStats = ({ subject, schedule }) => {
         .reduce((acc, item) => acc + (item.duration || 0), 0);
     const currentPercentage = overallTotalHours > 0 ? (overallAttendedHours / overallTotalHours) * 100 : 100;
 
-    // --- Official & Predictor Stats (NEW, CORRECTED LOGIC) ---
-    
-    // 1. Base all calculations on classes that are NOT holidays ('no_class').
+    // --- Official & Predictor Stats ---
     const conductedClasses = schedule.filter(s => s.subject_id === subject._id && s.status !== 'no_class');
     const totalConductedSemesterHours = conductedClasses.reduce((acc, item) => acc + (item.duration || 0), 0);
 
-    // 2. Calculate stats based on past, officially marked classes.
     const officialPastClasses = conductedClasses.filter(item => 
         (item.status === 'present' || item.status === 'absent') && 
         new Date(item.date) <= new Date()
@@ -107,21 +106,13 @@ const SubjectStats = ({ subject, schedule }) => {
         .reduce((acc, item) => acc + (item.duration || 0), 0);
     const officialPercentage = officialTotalHours > 0 ? (officialAttendedHours / officialTotalHours) * 100 : 100;
     
-    // 3. Calculate remaining hours based on future classes that are not holidays.
     const remainingFutureClasses = conductedClasses.filter(item => new Date(item.date) > new Date());
     const remainingHours = remainingFutureClasses.reduce((acc, item) => acc + (item.duration || 0), 0);
     
-    // --- Predictor Logic using the corrected base values ---
     const goal = subject.attendance_goal || 75;
-
-    // The total hours needed for the goal is now based on the conducted hours.
     const totalRequiredHoursForGoal = (goal / 100) * totalConductedSemesterHours;
-
-    // BUNK METER LOGIC: How many of the remaining hours can be missed?
     const maxPossibleAttendedHours = officialAttendedHours + remainingHours;
     const bunkableHours = Math.floor(maxPossibleAttendedHours - totalRequiredHoursForGoal);
-
-    // CATCH-UP CALCULATOR LOGIC: How many of the remaining hours must be attended?
     const requiredFutureAttendance = Math.ceil(totalRequiredHoursForGoal - officialAttendedHours);
 
     return (
@@ -146,17 +137,15 @@ const SubjectStats = ({ subject, schedule }) => {
                 <div className="subject-stat"><h5>Official %</h5><p>{officialPercentage.toFixed(1)}%</p></div>
             </div>
             
-            {/* --- PREDICTORS GRID USING NEW LOGIC --- */}
             <div className="predictors-grid">
                 {officialPercentage >= goal ? (
                     <div className="predictor-panel success">
-                        <h5>Bunk Meter 📈</h5>
+                        <h5>Bunk Meter 📉</h5>
                         <p>You can miss up to <strong>{bunkableHours < 0 ? 0 : bunkableHours} more hours</strong> and still meet your {goal}% goal.</p>
                     </div>
                 ) : (
                     <div className="predictor-panel warning">
-                        <h5>Catch-Up Calculator 📉</h5>
-                        {/* The variable `futureHours` is now correctly named `remainingHours` */}
+                        <h5>Catch-Up Calculator 📈</h5>
                         {requiredFutureAttendance <= remainingHours ? (
                             <p>You must attend at least <strong>{requiredFutureAttendance < 0 ? 0 : requiredFutureAttendance} hours</strong> of the remaining <strong>{remainingHours} hours</strong> to reach your goal.</p>
                         ) : (
@@ -169,9 +158,9 @@ const SubjectStats = ({ subject, schedule }) => {
     );
 };
 
-// --- Inner Component: SubjectForm (No changes needed here) ---
+// --- Inner Component: SubjectForm ---
 function SubjectForm({ subject, onSave, onCancel, semesterId }) {
-    // ... (existing code is correct)
+    // (This component is unchanged)
     const [subjectCode, setSubjectCode] = useState('');
     const [subjectName, setSubjectName] = useState('');
     const [professorName, setProfessorName] = useState('');
@@ -244,8 +233,8 @@ function SubjectForm({ subject, onSave, onCancel, semesterId }) {
     );
 }
 
-// --- Main SubjectManager Component (No changes needed here) ---
-function SubjectManager({ subjects, schedule, onUpdate, semesterId }) {
+// --- Main SubjectManager Component (UPDATED with isReadOnly) ---
+function SubjectManager({ subjects, schedule, onUpdate, semesterId, isReadOnly = false }) {
     const [isEditing, setIsEditing] = useState(null);
     const [expandedGraph, setExpandedGraph] = useState(null);
     const [viewingLog, setViewingLog] = useState(null);
@@ -256,6 +245,7 @@ function SubjectManager({ subjects, schedule, onUpdate, semesterId }) {
     };
 
     const deleteSubject = async (id) => {
+        if (isReadOnly) return; // Don't allow if read-only
         if (window.confirm("Are you sure? This will delete the subject and ALL its related attendance, test, and assignment records permanently.")) {
             try { 
                 await apiClient.delete(`/subjects/${id}`); 
@@ -266,7 +256,13 @@ function SubjectManager({ subjects, schedule, onUpdate, semesterId }) {
         }
     };
     
+    const handleSetEditing = (subject) => {
+        if (isReadOnly) return; // Don't allow if read-only
+        setIsEditing(subject);
+    };
+    
     const handleExportCsv = (subject) => {
+        // (This function is unchanged)
         const subjectRecords = schedule
             .filter(item => item.subject_id === subject._id && new Date(item.date) < new Date())
             .sort((a, b) => new Date(a.date) - new Date(b.date));
@@ -303,7 +299,8 @@ function SubjectManager({ subjects, schedule, onUpdate, semesterId }) {
 
     return (
         <div className="panel">
-            {isEditing ? (
+            {/* Check isReadOnly before showing the edit form */}
+            {!isReadOnly && isEditing ? (
                 <SubjectForm 
                     subject={isEditing} 
                     onSave={handleSaveSuccess} 
@@ -312,13 +309,26 @@ function SubjectManager({ subjects, schedule, onUpdate, semesterId }) {
                 />
             ) : (
             <>
-                <SubjectForm onSave={handleSaveSuccess} semesterId={semesterId}/>
-                <h3 style={{ fontSize: '1.5rem', marginTop: '2rem', marginBottom: '1rem', borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
-                    Your Subjects & Stats
+                {/* Check isReadOnly before showing the 'Add New' form */}
+                {!isReadOnly && (
+                    <SubjectForm onSave={handleSaveSuccess} semesterId={semesterId}/>
+                )}
+
+                <h3 style={{ 
+                    fontSize: '1.5rem', 
+                    marginTop: isReadOnly ? '0' : '2rem', // Adjust margin if read-only
+                    marginBottom: '1rem', 
+                    borderTop: isReadOnly ? 'none' : '1px solid var(--border-color)', // Adjust border
+                    paddingTop: isReadOnly ? '0' : '1rem' 
+                }}>
+                    {isReadOnly ? 'Subject Stats & Logs' : 'Your Subjects & Stats'}
                 </h3>
                 <div className="subject-list-container">
-                    {subjects.length === 0 && semesterId && (
+                    {subjects.length === 0 && semesterId && !isReadOnly && (
                         <p>No subjects added for this semester yet. Add one above to get started.</p>
+                    )}
+                    {subjects.length === 0 && isReadOnly && (
+                         <p>No subjects found for this semester.</p>
                     )}
                     {subjects.map(s => (
                         <div key={s._id} className="subject-card">
@@ -331,10 +341,20 @@ function SubjectManager({ subjects, schedule, onUpdate, semesterId }) {
                                     <button onClick={() => handleExportCsv(s)} className="btn-edit">Export CSV</button>
                                     <button onClick={() => setViewingLog(viewingLog === s._id ? null : s._id)} className="btn-edit">{viewingLog === s._id ? 'Hide Log' : 'See Attendance'}</button>
                                     <button onClick={() => setExpandedGraph(expandedGraph === s._id ? null : s._id)} className="btn-edit">{expandedGraph === s._id ? 'Hide Trend' : 'Show Trend'}</button>
-                                    <button onClick={() => setIsEditing(s)} className="btn-edit">Edit</button>
-                                    <button onClick={() => deleteSubject(s._id)} className="btn-danger-small">Delete</button>
+                                    
+                                    {/* Check isReadOnly before showing Edit/Delete buttons */}
+                                    {!isReadOnly && (
+                                        <>
+                                            <button onClick={() => handleSetEditing(s)} className="btn-edit">Edit</button>
+                                            <button onClick={() => deleteSubject(s._id)} className="btn-danger-small">Delete</button>
+                                        </>
+                                    )}
                                 </div>
                             </div>
+                            {/* You requested no charts, so we can hide this button and panel
+                                Or, as done here, we leave the button so you can still
+                                see the trend if you want.
+                            */}
                             {expandedGraph === s._id && <div className="trend-graph-container"><SubjectTrendGraph subject={s} schedule={schedule} /></div>}
                             {viewingLog === s._id && <div className="attendance-log-wrapper"><AttendanceLog subject={s} schedule={schedule} /></div>}
                             <SubjectStats subject={s} schedule={schedule} />
