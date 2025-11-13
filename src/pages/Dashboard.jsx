@@ -14,7 +14,7 @@ import ProfilePage from './ProfilePage';
 import UpdatePassword from '../components/dashboard/UpdatePassword';
 import AttendanceCalendar from '../components/dashboard/AttendanceCalendar';
 import ReportGenerator from '../components/dashboard/ReportGenerator';
-import NotificationSettings from '../components/dashboard/NotificationSettings'; // 1. IMPORT THE NEW COMPONENT
+ // 1. IMPORT THE NEW COMPONENT
 import ArchivesPage from './ArchivePages';
 const dayOfWeekAsInteger = { "Sunday": 0, "Monday": 1, "Tuesday": 2, "Wednesday": 3, "Thursday": 4, "Friday": 5, "Saturday": 6 };
 
@@ -139,7 +139,7 @@ function Dashboard({ user, profile, onProfileUpdate, isSidebarOpen, closeSidebar
                         <Route path="settings" element={
                             <div>
                                 <SemesterManager semester={activeSemester} onUpdate={forceDataRefresh} />
-                                <NotificationSettings user={user} />
+                                
                                 <ReportGenerator user={user} profile={profile} semester={activeSemester} subjects={subjects} schedule={schedule} />
                                 <UpdatePassword />
                             </div>
