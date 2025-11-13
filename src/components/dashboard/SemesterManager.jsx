@@ -39,12 +39,17 @@ function SemesterManager({ semester, onUpdate }) {
 
     const handleArchive = async () => {
         if (!semester) return;
-        if (window.confirm("Are you sure? This will hide the semester and its data from the dashboard. This action cannot be undone.")) {
+        
+        // --- CHANGE HERE ---
+        // Updated the confirmation message to be more accurate.
+        const confirmMessage = "Are you sure you want to end and archive this semester? It will be moved to the 'Archives' tab for read-only viewing.";
+        
+        if (window.confirm(confirmMessage)) {
             setLoading(true);
             try {
                 await apiClient.put(`/semesters/${semester._id}/archive`);
                 alert("Semester archived successfully!");
-                onUpdate();
+                onUpdate(); // This will refresh the app, hiding the archived semester
             } catch (error) {
                 alert(error.response?.data?.message || 'Failed to archive');
             } finally {
