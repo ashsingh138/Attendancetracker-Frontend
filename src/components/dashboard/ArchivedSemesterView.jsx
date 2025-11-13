@@ -1,6 +1,6 @@
-// Create this new file: e.g., src/components/ArchivedSemesterView.jsx
+// src/components/dashboard/ArchivedSemesterView.jsx
 import React, { useState, useEffect } from 'react';
-import apiClient from '../../api';
+import apiClient from '../../api'; // Corrected path
 import DashboardCharts from './DashboardCharts'; // Reuse existing component
 import AttendanceCalendar from './AttendanceCalendar'; // Reuse existing component
 import TestManager from './TestManager'; // Reuse existing component
@@ -11,7 +11,8 @@ function ArchivedSemesterView({ semester }) {
     const [semesterData, setSemesterData] = useState({
         subjects: [],
         schedule: [],
-        tests: []
+        tests: [],
+        assignments: [] // Added assignments
     });
 
     useEffect(() => {
@@ -19,18 +20,18 @@ function ArchivedSemesterView({ semester }) {
             if (!semester?._id) return;
             setLoading(true);
             try {
-                // Fetch all data associated with this specific semester ID
-                const [subjectsRes, scheduleRes, testsRes] = await Promise.all([
-                    apiClient.get(`/subjects?semester_id=${semester._id}`),
-                    apiClient.get(`/schedule?semester_id=${semester._id}`),
-                    apiClient.get(`/tests?semester_id=${semester._id}`)
-                ]);
+                // --- UPDATED THIS SECTION ---
+                // Makes one call to the new consolidated endpoint
+                const response = await apiClient.get(`/dashboard/semester/${semester._id}`);
                 
                 setSemesterData({
-                    subjects: subjectsRes.data,
-                    schedule: scheduleRes.data,
-                    tests: testsRes.data
+                    subjects: response.data.subjects,
+                    schedule: response.data.attendanceRecords, // Use attendanceRecords for schedule
+                    tests: response.data.tests,
+                    assignments: response.data.assignments // Store assignments
                 });
+                // --- END OF UPDATE ---
+
             } catch (err) {
                 setError('Failed to load semester details.');
                 console.error(err);
@@ -45,7 +46,7 @@ function ArchivedSemesterView({ semester }) {
     if (loading) return <p>Loading semester details...</p>;
     if (error) return <p>{error}</p>;
 
-    const { subjects, schedule, tests } = semesterData;
+    const { subjects, schedule, tests, assignments } = semesterData;
 
     return (
         <div className="archived-view">
@@ -62,13 +63,20 @@ function ArchivedSemesterView({ semester }) {
 
             {/* 3. Re-use TestManager in a read-only-ish way */}
             {/* We pass an empty function to onUpdate to disable changes */}
+            {/* You could also pass a readOnly prop if you implemented it */}
             <TestManager 
                 subjects={subjects} 
                 tests={tests} 
-                onUpdate={() => {}} 
+                onUpdate={() => { alert('This semester is archived and read-only.'); }}
             />
-            {/* Note: You might want to modify TestManager to accept a 
-                'readOnly' prop to hide the forms and action buttons */}
+            
+            {/* You can also display assignments if you want */}
+            {/* <AssignmentManager 
+                subjects={subjects} 
+                assignments={assignments} 
+                onUpdate={() => { alert('This semester is archived and read-only.'); }}
+            />
+            */}
         </div>
     );
 }
